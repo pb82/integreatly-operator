@@ -234,7 +234,7 @@ func (r *Reconciler) reconcileComponents(ctx context.Context, installation *inte
 		}
 		kc.Spec.ExternalDatabase = keycloak.KeycloakExternalDatabase{Enabled: true}
 		kc.Labels = getMasterLabels()
-		kc.Spec.Instances = 2
+		kc.Spec.Instances = 1
 		kc.Spec.ExternalAccess = keycloak.KeycloakExternalAccess{Enabled: true}
 		kc.Spec.Profile = rhsso.RHSSOProfile
 		return nil
