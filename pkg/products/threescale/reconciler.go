@@ -371,7 +371,7 @@ func (r *Reconciler) reconcileComponents(ctx context.Context, serverClient k8scl
 	}
 
 	// create the 3scale api manager
-	resourceRequirements := true
+	resourceRequirements := false
 	apim := &threescalev1.APIManager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apiManagerName,
@@ -379,7 +379,7 @@ func (r *Reconciler) reconcileComponents(ctx context.Context, serverClient k8scl
 		},
 		Spec: threescalev1.APIManagerSpec{
 			HighAvailability: &threescalev1.HighAvailabilitySpec{
-				Enabled: true,
+				Enabled: false,
 			},
 			APIManagerCommonSpec: threescalev1.APIManagerCommonSpec{
 				WildcardDomain:              r.installation.Spec.RoutingSubdomain,
