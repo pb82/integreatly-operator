@@ -151,7 +151,7 @@ func createInstallationCR(ctx context.Context, serverClient k8sclient.Client) er
 			Spec: integreatlyv1alpha1.RHMISpec{
 				Type:                        string(integreatlyv1alpha1.InstallationTypeManaged),
 				NamespacePrefix:             DefaultInstallationPrefix,
-				SelfSignedCerts:             false,
+				SelfSignedCerts:             true,
 				SMTPSecret:                  DefaultInstallationPrefix + "smtp",
 				UseClusterStorage:           useClusterStorage,
 				OperatorsInProductNamespace: false, // e2e tests and Makefile need to be updated when default is changed
