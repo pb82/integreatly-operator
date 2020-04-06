@@ -3,29 +3,31 @@ package functional
 import (
 	"fmt"
 	"testing"
-	"common"
+
 	"github.com/integr8ly/integreatly-operator/test/resources"
-	"net/http"
-	"net/url"
-	"strings"
+)
+
+const (
+	TestingIDPRealm                = "testing-idp"
+	defaultDedicatedAdminName      = "customer-admin"
+	defaultNumberOfTestUsers       = 2
+	defaultNumberOfDedicatedAdmins = 2
+	defaultSecret                  = "rhmiForeva"
+	DefaultTestUserName            = "test-user"
+	DefaultPassword                = "Password1"
 )
 
 func TestUserSsoPermissions(t *testing.T, ctx *TestingContext) {
 
-	//err := t.DoAuthOpenshiftUser(, "test-user-1", t.DefaultPassword)
-
-	err := resources.DoAuthOpenshiftUser(t.http., "test-user-1", common.DefaultPassword, ctx., common.TestingIDPRealm)
+	// get console master url
+	rhmi, err := shared_functions.getRHMI(ctx.Client)
 	if err != nil {
-		fmt.Fatalf("error: %e", err)
+		t.Fatalf("error getting RHMI CR: %v", err)
 	}
-	
-	// if err != nil {
-	// 	fmt.Fatalf("error: %e", err)
-	// }
+	masterURL := rhmi.Spec.MasterURL
 
-	// err := resources.DoAuthOpenshiftUser("","test-user-1", ctx.)
-	// err := resources.DoAuthOpenshiftUser(masterURL, "test-user-1", common.DefaultPassword, ctx., common.TestingIDPRealm)
-	// if err != nil {
-	// 	fmt.Fatalf("error: %e", err)
+	if err := resources.DoAuthOpenshiftUser(fmt.Sprintf("%s/auth/login", masterURL), "test-user-1", "Password1", ctx.HttpClient, "testing-idp"); err != nil {
+		t.Fatalf("error occured trying to get token : %v", err)
+	}
 
 }
