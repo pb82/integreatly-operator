@@ -37,6 +37,31 @@ type Client struct {
 // T is a generic type for keycloak spec resources
 type T interface{}
 
+func (c *Client) Impersonate(realm, userId string) error {
+	req, err := http.NewRequest(
+		"POST",
+		fmt.Sprintf("%s/auth/admin/realms/%s/users/%s/impersonation", c.URL, realm, userId),
+		nil,
+	)
+	if err != nil {
+		return errors.Wrapf(err, "error creating POST %s request", "impersonate")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	res, err := c.requester.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	data, err := ioutil.ReadAll(res.Body)
+
+	logrus.Info(data)
+
+	return nil
+}
+
 // Generic create function for creating new Keycloak resources
 func (c *Client) create(obj T, resourcePath, resourceName string) (string, error) {
 	jsonValue, err := json.Marshal(obj)
@@ -47,7 +72,7 @@ func (c *Client) create(obj T, resourcePath, resourceName string) (string, error
 
 	req, err := http.NewRequest(
 		"POST",
-		fmt.Sprintf("%s/auth/admin/%s", c.URL, resourcePath),
+		fmt.Sprintf("%s/auth/admin/realms/%s", c.URL, resourcePath),
 		bytes.NewBuffer(jsonValue),
 	)
 	if err != nil {
@@ -1035,7 +1060,8 @@ type KeycloakInterface interface {
 	ListUsersInGroup(realmName, groupID string) ([]*v1alpha1.KeycloakAPIUser, error)
 	AddUserToGroup(realmName, userID, groupID string) error
 	DeleteUserFromGroup(realmName, userID, groupID string) error
-
+	Impersonate(realm, userId string) error
+	
 	FindGroupByName(groupName string, realmName string) (*Group, error)
 	CreateGroup(group string, realmName string) (string, error)
 	MakeGroupDefault(groupID string, realmName string) error

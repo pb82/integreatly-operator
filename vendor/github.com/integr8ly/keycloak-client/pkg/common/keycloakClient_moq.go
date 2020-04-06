@@ -1014,6 +1014,10 @@ func (mock *KeycloakInterfaceMock) CreateClientCalls() []struct {
 	return calls
 }
 
+func (mock *KeycloakInterfaceMock) Impersonate(realm, userId string) error {
+	return nil
+}
+
 // CreateFederatedIdentity calls CreateFederatedIdentityFunc.
 func (mock *KeycloakInterfaceMock) CreateFederatedIdentity(fid v1alpha1.FederatedIdentity, userID string, realmName string) (string, error) {
 	if mock.CreateFederatedIdentityFunc == nil {

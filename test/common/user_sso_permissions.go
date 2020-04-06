@@ -44,10 +44,22 @@ func TestUserSsoPermissions(t *testing.T, ctx *TestingContext) {
 		t.Fatal(err)
 	}
 
-	realms, err := client.ListRealms()
+	users, err := client.ListUsers("testing-idp")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Log(realms)
+	var userId string
+	for _, user := range users {
+		if user.UserName == fmt.Sprintf("test-user-0") {
+			userId = user.ID
+		}
+	}
+
+	err = client.Impersonate("testing-idp", userId)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(userId)
 }
