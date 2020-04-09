@@ -3,7 +3,10 @@ package marketplace
 import (
 	"context"
 	"fmt"
+	"github.com/blang/semver"
+	"github.com/integr8ly/integreatly-operator/version"
 	"reflect"
+	"strings"
 
 	resourcesowner "github.com/integr8ly/integreatly-operator/pkg/resources/owner"
 
@@ -32,6 +35,7 @@ const (
 type MarketplaceInterface interface {
 	InstallOperator(ctx context.Context, serverClient k8sclient.Client, owner ownerutil.Owner, t Target, operatorGroupNamespaces []string, approvalStrategy coreosv1alpha1.Approval) error
 	GetSubscriptionInstallPlans(ctx context.Context, serverClient k8sclient.Client, subName, ns string) (*coreosv1alpha1.InstallPlanList, *coreosv1alpha1.Subscription, error)
+	UpdateAvailable(ctx context.Context, serverClient k8sclient.Client) (bool, string, error)
 }
 
 type Manager struct{}
@@ -45,6 +49,32 @@ type Target struct {
 	Pkg,
 	Channel string
 	ManifestPackage string
+}
+
+func (m *Manager) UpdateAvailable(ctx context.Context, serverClient k8sclient.Client) (bool, string, error) {
+	csvs := coreosv1alpha1.ClusterServiceVersionList{}
+	opts := k8sclient.ListOptions{
+		Namespace: "redhat-rhmi-operator",
+	}
+	err := serverClient.List(ctx, &csvs, &opts)
+	if err != nil {
+		return false, "", err
+	}
+
+	var rhmi coreosv1alpha1.ClusterServiceVersion
+	for _, csv := range csvs.Items {
+		if strings.Contains(csv.Name, "integreatly-operator") {
+			rhmi = csv
+		}
+	}
+
+	currentVersion, err := semver.Parse(version.Version)
+	if err != nil {
+		return false, "", err
+	}
+
+	updateAvailable := currentVersion.LT(rhmi.Spec.Version.Version)
+	return updateAvailable, rhmi.Spec.Version.String(), nil
 }
 
 func (m *Manager) InstallOperator(ctx context.Context, serverClient k8sclient.Client, owner ownerutil.Owner, t Target, operatorGroupNamespaces []string, approvalStrategy coreosv1alpha1.Approval) error {

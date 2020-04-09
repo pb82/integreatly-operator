@@ -138,7 +138,7 @@ func createInstallationCR(ctx context.Context, serverClient k8sclient.Client) er
 	// Creates installation CR in case there is none
 	if len(installationList.Items) == 0 {
 
-		useClusterStorage, _ := os.LookupEnv("USE_CLUSTER_STORAGE")
+		useClusterStorage := true
 
 		logrus.Infof("Creating a %s rhmi CR with USC %s, as no CR rhmis were found in %s namespace", string(integreatlyv1alpha1.InstallationTypeManaged), useClusterStorage, namespace)
 
@@ -154,7 +154,7 @@ func createInstallationCR(ctx context.Context, serverClient k8sclient.Client) er
 				SMTPSecret:                  DefaultInstallationPrefix + "smtp",
 				DeadMansSnitchSecret:        DefaultInstallationPrefix + "deadmanssnitch",
 				PagerDutySecret:             DefaultInstallationPrefix + "pagerduty",
-				UseClusterStorage:           useClusterStorage,
+				UseClusterStorage:           "true",
 				OperatorsInProductNamespace: false, // e2e tests and Makefile need to be updated when default is changed
 			},
 		}

@@ -14,6 +14,7 @@ import (
 var (
 	lockMarketplaceInterfaceMockGetSubscriptionInstallPlans sync.RWMutex
 	lockMarketplaceInterfaceMockInstallOperator             sync.RWMutex
+	lockMarketplaceInterfaceMockUpdateAvailable             sync.RWMutex
 )
 
 // Ensure, that MarketplaceInterfaceMock does implement MarketplaceInterface.
@@ -32,6 +33,9 @@ var _ MarketplaceInterface = &MarketplaceInterfaceMock{}
 //             InstallOperatorFunc: func(ctx context.Context, serverClient client.Client, owner ownerutil.Owner, t Target, operatorGroupNamespaces []string, approvalStrategy v1alpha1.Approval) error {
 // 	               panic("mock out the InstallOperator method")
 //             },
+//             UpdateAvailableFunc: func(ctx context.Context, serverClient client.Client) (bool, string, error) {
+// 	               panic("mock out the UpdateAvailable method")
+//             },
 //         }
 //
 //         // use mockedMarketplaceInterface in code that requires MarketplaceInterface
@@ -44,6 +48,9 @@ type MarketplaceInterfaceMock struct {
 
 	// InstallOperatorFunc mocks the InstallOperator method.
 	InstallOperatorFunc func(ctx context.Context, serverClient client.Client, owner ownerutil.Owner, t Target, operatorGroupNamespaces []string, approvalStrategy v1alpha1.Approval) error
+
+	// UpdateAvailableFunc mocks the UpdateAvailable method.
+	UpdateAvailableFunc func(ctx context.Context, serverClient client.Client) (bool, string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -72,6 +79,13 @@ type MarketplaceInterfaceMock struct {
 			OperatorGroupNamespaces []string
 			// ApprovalStrategy is the approvalStrategy argument value.
 			ApprovalStrategy v1alpha1.Approval
+		}
+		// UpdateAvailable holds details about calls to the UpdateAvailable method.
+		UpdateAvailable []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ServerClient is the serverClient argument value.
+			ServerClient client.Client
 		}
 	}
 }
@@ -167,5 +181,40 @@ func (mock *MarketplaceInterfaceMock) InstallOperatorCalls() []struct {
 	lockMarketplaceInterfaceMockInstallOperator.RLock()
 	calls = mock.calls.InstallOperator
 	lockMarketplaceInterfaceMockInstallOperator.RUnlock()
+	return calls
+}
+
+// UpdateAvailable calls UpdateAvailableFunc.
+func (mock *MarketplaceInterfaceMock) UpdateAvailable(ctx context.Context, serverClient client.Client) (bool, string, error) {
+	if mock.UpdateAvailableFunc == nil {
+		panic("MarketplaceInterfaceMock.UpdateAvailableFunc: method is nil but MarketplaceInterface.UpdateAvailable was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		ServerClient client.Client
+	}{
+		Ctx:          ctx,
+		ServerClient: serverClient,
+	}
+	lockMarketplaceInterfaceMockUpdateAvailable.Lock()
+	mock.calls.UpdateAvailable = append(mock.calls.UpdateAvailable, callInfo)
+	lockMarketplaceInterfaceMockUpdateAvailable.Unlock()
+	return mock.UpdateAvailableFunc(ctx, serverClient)
+}
+
+// UpdateAvailableCalls gets all the calls that were made to UpdateAvailable.
+// Check the length with:
+//     len(mockedMarketplaceInterface.UpdateAvailableCalls())
+func (mock *MarketplaceInterfaceMock) UpdateAvailableCalls() []struct {
+	Ctx          context.Context
+	ServerClient client.Client
+} {
+	var calls []struct {
+		Ctx          context.Context
+		ServerClient client.Client
+	}
+	lockMarketplaceInterfaceMockUpdateAvailable.RLock()
+	calls = mock.calls.UpdateAvailable
+	lockMarketplaceInterfaceMockUpdateAvailable.RUnlock()
 	return calls
 }

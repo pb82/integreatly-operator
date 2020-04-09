@@ -54,6 +54,7 @@ const (
 	paramIntegreatlyVersion   = "INTEGREATLY_VERSION"
 	paramClusterType          = "CLUSTER_TYPE"
 	paramWalkthroughLocations = "WALKTHROUGH_LOCATIONS"
+	paramUpdateInfo           = "UPDATE_INFO"
 	defaultRouteName          = "tutorial-web-app"
 	manifestPackage           = "integreatly-solution-explorer"
 )
@@ -80,6 +81,13 @@ type OauthResolver interface {
 type productInfo struct {
 	Host    string
 	Version integreatlyv1alpha1.ProductVersion
+}
+
+type updateInfo struct {
+	UpdateAvailable  bool   `json:"updateAvailable"`
+	CurrentVersion   string `json:"currentVersion"`
+	AvailableVersion string `json:"availableVersion"`
+	ServiceAffecting bool   `json:"serviceAffecting"`
 }
 
 func NewReconciler(configManager config.ConfigReadWriter, installation *integreatlyv1alpha1.RHMI, oauthv1Client oauthClient.OauthV1Interface, mpm marketplace.MarketplaceInterface, resolver OauthResolver, recorder record.EventRecorder) (*Reconciler, error) {
@@ -360,6 +368,23 @@ func (r *Reconciler) ReconcileCustomResource(ctx context.Context, installation *
 	oauthURL := strings.Replace(strings.Replace(oauthConfig.AuthorizationEndpoint, "https://", "", 1), "/oauth/authorize", "", 1)
 	logrus.Info("ReconcileCustomResource setting url for openshift host ", oauthURL)
 
+	updateAvailable, v, err := r.mpm.UpdateAvailable(ctx, client)
+	if err != nil {
+		return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("failed to check for updates: %w", err)
+	}
+
+	u := updateInfo{
+		UpdateAvailable:  updateAvailable,
+		CurrentVersion:   version.Version,
+		AvailableVersion: v,
+		ServiceAffecting: true,
+	}
+
+	updateInfoString, err := json.Marshal(u)
+	if err != nil {
+		return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("failed to serialize update info: %w", err)
+	}
+
 	installedServices, err := r.getInstalledProducts(installation)
 	if err != nil {
 		return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("failed to retrieve installed products information from %s CR: %w", installation.Name, err)
@@ -377,6 +402,7 @@ func (r *Reconciler) ReconcileCustomResource(ctx context.Context, installation *
 			paramClusterType:          "osd",
 			paramInstalledServices:    installedServices,
 			paramIntegreatlyVersion:   version.IntegreatlyVersion,
+			paramUpdateInfo:           string(updateInfoString),
 			paramWalkthroughLocations: defaultWalkthroughsLoc,
 		}
 		return nil
